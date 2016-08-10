@@ -79,3 +79,7 @@ ul.header li a {
 .imgs-container img.loading-img {
     width: 20%;
 }
+
+.albums-container img.thumbnail{
+  width: 150px;
+}

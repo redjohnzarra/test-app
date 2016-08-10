@@ -16,7 +16,7 @@ var App = React.createClass({
         <h1>Test APP</h1>
         <ul className="header">
           <li><IndexLink to="/" activeClassName="active">Home</IndexLink></li>
-          <li><Link to="/images" activeClassName="active">Images</Link></li>
+          <li><Link to="/albums" activeClassName="active">Albums</Link></li>
           <li><Link to="/users" activeClassName="active">Users</Link></li>
         </ul>
         <div className="content">
@@ -138,51 +138,127 @@ var Post = React.createClass({
     }
 });
 
-var Images = React.createClass({
-    getInitialState(){
-        return {
-            images: []
-        };
-    },
-    componentDidMount(){
-        this.fetchImages()
-    },
+var albums = [], albumData = [];
 
-    fetchImages(){
-        var args = {
-            url: 'http://jsonplaceholder.typicode.com/photos',
-            params: ''
-        }
-        var self = this;
-        query._get(args, function(result){
-            if (self.isMounted()) {
-              self.setState({
-                images: result
-              });
+var IM = {
+    Albums: React.createClass({
+        getInitialState(){
+            return {
+                albums: []
+            };
+        },
+        componentDidMount(){
+            this.fetchImages()
+        },
+        fetchImages(){
+            if(this.state.albums.length < 1){
+                var args = {
+                    url: 'http://jsonplaceholder.typicode.com/photos',
+                    params: ''
+                }
+                var self = this;
+                query._get(args, function(result){
+                    if (self.isMounted()) {
+                      self.setState({
+                        albums: result
+                      });
+                    }
+                });
             }
-        });
-    },
+        },
+        render(){
+            var ai = this.state.albums;
 
-    render(){
-        var iD = this.state.images;
+            if(ai.length > 0){
+                for(var ind in ai){
+                    albums[ai[ind].albumId] = [];
+                    albumData[ai[ind].albumId] = [];
+                }
 
-        iD = iD.map(function(image, i){
-            if(i < 21) return <img src={image.thumbnailUrl} key={i} />
-        });
+                for(var ind in ai){
+                    var da = [];
+                    var albumId = ai[ind].albumId;
 
-        if(!iD.length){
-            iD = <img className='loading-img' src="img/loading.gif" />
+                    albumData[albumId]['id'] = albumId;
+                    albumData[albumId]['title'] = ai[ind].title;
+                    albumData[albumId]['url'] = ai[ind].url;
+                    albums[albumId].push(ai[ind]);
+                }
+
+                ai = albumData.map(function(alb, i){
+                    var ttitle = truncate(alb.title, 15, '...');
+                    return (
+                        <div className="col-md-3" key={i}>
+                          <div><Link className="btn btn-default btn-sm" to={"/albums/"+alb.id}><img className="thumbnail" src={alb.url} /><div>{ttitle}</div></Link></div>
+                        </div>
+                    );
+                });
+            }else{
+                ai = <div className="imgs-container"><img src="img/loading.gif" /></div>
+            }
+
+            return(
+                <div className="container">
+                    <h2>Albums</h2>
+                    <hr/>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ea eius quas expedita, suscipit. Eius rerum hic quas assumenda, dolorem fugiat!</p>
+                    <div className="albums-container">
+                        {ai}
+                    </div>
+                </div>
+            );
         }
+    }),
+    AlbumEach: React.createClass({
+        getInitialState() {
+            return {
+                album: []
+            };
+        },
+        componentDidMount(){
+            this.getAlbumEachData(this.props.params.id)
+        },
+        getAlbumEachData(albumId){
+            if(this.isMounted()){
+                this.setState({
+                    album: albums[albumId] || []
+                });
+            }
+        },
+        render(){
+            var ae = this.state.album;
+            if(ae.length > 0){
+                ae = ae.map(function(al, i){
+                    return <div className="col-md-2" key={i}><img src={al.thumbnailUrl} /></div>
+                });
+            }else{
 
-        return(
-            <div className="container">
-                <h2>Images</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ea eius quas expedita, suscipit. Eius rerum hic quas assumenda, dolorem fugiat!</p>
-                <p className="imgs-container">
-                    {iD}
-                </p>
-            </div>
-        );
+                ae = <div className="imgs-container"><img src="img/loading.gif" /></div>;
+            }
+
+            var albumTitle = albumData[this.props.params.id] != undefined ? albumData[this.props.params.id].title : '';
+            return(
+                <div className="container">
+                    <h3>Images for Album <strong>{albumTitle}</strong>
+                    </h3>
+                    <hr/>
+                    <div><Link className="pull-right" to="/albums">back to Albums</Link></div>
+                    <br/><br/>
+                    <div className="row">
+                        {ae}
+                    </div>
+                </div>
+            );
+        }
+    })
+}
+
+Object.defineProperty(Array.prototype, 'chunk', {
+    value: function(chunkSize) {
+        var R = [];
+        for (var i=0; i<this.length; i+=chunkSize)
+            R.push(this.slice(i,i+chunkSize));
+        return R;
     }
 });
 
@@ -198,11 +274,9 @@ var UC = {
         handleChange: function(e){
             this.setState({searchString:e.target.value});
         },
-
         componentDidMount(){
             this.getUsers()
         },
-
         getUsers(){
             var args = {
                 url: 'http://jsonplaceholder.typicode.com/users',
@@ -218,7 +292,6 @@ var UC = {
                 }
             });
         },
-
         render(){
             var uD = this.state.users;
             var ss = this.state.searchString.trim().toLowerCase();
@@ -276,18 +349,15 @@ var UC = {
                 ue: []
             };
         },
-
         componentDidMount(){
             this.getUserData(this.props.params.id)
         },
-
         componentWillReceiveProps(nextProps) {
             this.setState({
                 ue: []
             });
             this.getUserData(nextProps.params.id)
         },
-
         getUserData(userId){
             var args = {
                 url: 'http://jsonplaceholder.typicode.com/users/'+userId,
@@ -302,7 +372,6 @@ var UC = {
                 }
             });
         },
-
         render(){
             var user = this.state.ue;
             var userData;
@@ -369,7 +438,8 @@ ReactDOM.render(
         <Route path="/" component={App}>
             <IndexRoute component={Home}/>
             <Route path="post/:id" component={Post} />
-            <Route path="images" component={Images} />
+            <Route path="albums" component={IM.Albums} />
+                <Route path="albums/:id" component={IM.AlbumEach} />
             <Route path="users" component={UC.Users}>
                 <Route path=":id" component={UC.UserEach}/>
             </Route>
