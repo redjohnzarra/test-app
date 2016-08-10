@@ -229,7 +229,7 @@ var IM = {
             var ae = this.state.album;
             if(ae.length > 0){
                 ae = ae.map(function(al, i){
-                    return <div className="col-md-2" key={i}><img src={al.thumbnailUrl} /></div>
+                    return <a href={al.url} target="_blank" key={i}><div className="col-md-2"><img src={al.thumbnailUrl} /></div></a>
                 });
             }else{
 
@@ -238,7 +238,7 @@ var IM = {
 
             var albumTitle = albumData[this.props.params.id] != undefined ? albumData[this.props.params.id].title : '';
             return(
-                <div className="container">
+                <div className="container imgs-cont">
                     <h3>Images for Album <strong>{albumTitle}</strong>
                     </h3>
                     <hr/>

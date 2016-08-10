@@ -83,3 +83,7 @@ ul.header li a {
 .albums-container img.thumbnail{
   width: 150px;
 }
+
+.imgs-cont div.col-md-2{
+  margin-top: 20px;
+}
