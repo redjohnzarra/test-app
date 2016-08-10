@@ -7,7 +7,7 @@ var {
 } = ReactRouter;
 
 
-var destination = $('#container').get(0);
+var destination = document.getElementById('container');
 
 var App = React.createClass({
   render() {
@@ -27,6 +27,7 @@ var App = React.createClass({
   }
 });
 
+var allPosts = [];
 var Home = React.createClass({
     getInitialState(){
         return {
@@ -38,33 +39,40 @@ var Home = React.createClass({
     },
 
     getPosts(){
-        $.get('http://jsonplaceholder.typicode.com/posts', function(result) {
-            if (this.isMounted()) {
-              this.setState({
+        var args = {
+            url: 'http://jsonplaceholder.typicode.com/posts',
+            params: ''
+        }
+        var self = this;
+        query._get(args, function(result){
+            if (self.isMounted()) {
+              self.setState({
                 posts: result
               });
             }
-        }.bind(this));
+        });
     },
 
     render(){
         var po = this.state.posts;
 
-        po = po.map(function(post, i){
-            var ti = truncate(post.title,10,'-');
-            var tStr = truncate(post.body,50,'...');
-            return (
-                    <div className="col-lg-3" key={i}>
-                      <h3>{post.title}</h3>
-                      <p>{tStr}</p>
-                      <p><Link className="btn btn-default btn-sm" to={"/post/"+post.id}>Read more</Link></p>
-                    </div>
-                );
-        });
-
-        if(!po.length){
+        if(po.length > 0){
+            po = po.map(function(post, i){
+                allPosts[post.id] = post;
+                var ti = truncate(post.title,10,'-');
+                var tStr = truncate(post.body,50,'...');
+                return (
+                        <div className="col-lg-3" key={i}>
+                          <h3>{post.title}</h3>
+                          <p>{tStr}</p>
+                          <p><Link className="btn btn-default btn-sm" to={"/post/"+post.id}>Read more</Link></p>
+                        </div>
+                    );
+            });
+        }else{
             po = <div className="imgs-container"><img src="img/loading.gif" /></div>
         }
+
         return(
             <div className="container">
                 <div className="panel panel-default">
@@ -107,13 +115,11 @@ var Post = React.createClass({
     },
 
     getPostData(pId){
-        $.get('http://jsonplaceholder.typicode.com/posts/'+pId, function(result) {
-            if (this.isMounted()) {
-              this.setState({
-                post: result
-              });
-            }
-        }.bind(this));
+        if(this.isMounted()){
+            this.setState({
+                post: allPosts[pId]
+            });
+        }
     },
 
     render(){
@@ -143,13 +149,18 @@ var Images = React.createClass({
     },
 
     fetchImages(){
-        $.get('http://jsonplaceholder.typicode.com/photos', function(result) {
-            if (this.isMounted()) {
-              this.setState({
+        var args = {
+            url: 'http://jsonplaceholder.typicode.com/photos',
+            params: ''
+        }
+        var self = this;
+        query._get(args, function(result){
+            if (self.isMounted()) {
+              self.setState({
                 images: result
               });
             }
-        }.bind(this));
+        });
     },
 
     render(){
@@ -193,15 +204,19 @@ var UC = {
         },
 
         getUsers(){
-            $.get('http://jsonplaceholder.typicode.com/users', function(result) {
-                // console.log(result); return;
-                if (this.isMounted()) {
-                  this.setState({
+            var args = {
+                url: 'http://jsonplaceholder.typicode.com/users',
+                params: ''
+            }
+            var self = this;
+            query._get(args, function(result){
+                if (self.isMounted()) {
+                  self.setState({
                     users: result,
                     ajaxStatus: 'done'
                   });
                 }
-            }.bind(this));
+            });
         },
 
         render(){
@@ -267,24 +282,31 @@ var UC = {
         },
 
         componentWillReceiveProps(nextProps) {
+            this.setState({
+                ue: []
+            });
             this.getUserData(nextProps.params.id)
         },
 
         getUserData(userId){
-            $.get('http://jsonplaceholder.typicode.com/users/'+userId, function(result) {
-                // console.log(result); return;
-                if (this.isMounted()) {
-                  this.setState({
+            var args = {
+                url: 'http://jsonplaceholder.typicode.com/users/'+userId,
+                params: ''
+            }
+            var self = this;
+            query._get(args, function(result){
+                if (self.isMounted()) {
+                  self.setState({
                     ue: result
                   });
                 }
-            }.bind(this));
+            });
         },
 
         render(){
             var user = this.state.ue;
             var userData;
-            if($.isEmptyObject(user)){
+            if(user.length < 1){
                 userData = <div className="imgs-container"><img src="img/loading.gif" /></div>
             }else{
                 var dArr = [];
@@ -322,6 +344,24 @@ var UC = {
             );
         }
     })
+}
+
+var query = {
+    _get : function(args, callback){
+        var url = args.url;
+        var params = args.params;
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url+'?'+params);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                callback(JSON.parse(xhr.responseText));
+            }
+            else {
+                alert('Request failed.  Returned status of ' + xhr.status);
+            }
+        };
+        xhr.send();
+    }
 }
 
 ReactDOM.render(
